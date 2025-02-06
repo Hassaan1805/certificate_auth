@@ -1,111 +1,128 @@
-from flask import Flask, request, send_file, jsonify, send_from_directory
-from PIL import Image, ImageDraw, ImageFont
+from flask import Flask, request, render_template, jsonify, send_file
 import hashlib
-import os
 import json
-import mysql.connector as msql
+import os
+from datetime import datetime
 
 app = Flask(__name__)
 
-# Database Connection
-DB_CONFIG = {
-    "host": "localhost",
-    "user": "root",
-    "password": "tiger",
-    "database": "certificate_db"
-}
+OUTPUT_DIR = "certificates"  # Folder to store generated certificates
+CERTIFICATE_METADATA_FILE = "certificate_metadata.json"  # File to store certificate metadata
 
-db = msql.connect(**DB_CONFIG)
-cursor = db.cursor()
-
-# Ensure database and table exist
-cursor.execute("CREATE DATABASE IF NOT EXISTS certificate_db")
-cursor.execute("""
-    CREATE TABLE IF NOT EXISTS certificates (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        serial_number VARCHAR(255) UNIQUE NOT NULL,
-        hash_value VARCHAR(255) NOT NULL
-    )
-""")
-db.commit()
-
-# Constants
-OUTPUT_DIR = "certificates"
-FONT_PATH = "arial.ttf"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-def insert_certificate(serial_number, hash_value):
-    """Insert certificate hash into database."""
-    cursor.execute("""
-        INSERT INTO certificates (serial_number, hash_value)
-        VALUES (%s, %s)
-        ON DUPLICATE KEY UPDATE hash_value = VALUES(hash_value)
-    """, (serial_number, hash_value))
-    db.commit()
+# Load the metadata from the JSON file or initialize an empty dictionary
+if os.path.exists(CERTIFICATE_METADATA_FILE):
+    with open(CERTIFICATE_METADATA_FILE, "r") as f:
+        certificate_metadata = json.load(f)
+else:
+    certificate_metadata = {}
 
-def check_hash(serial_number, hash_value):
-    """Check if a hash exists in the database."""
-    cursor.execute("SELECT hash_value FROM certificates WHERE serial_number = %s", (serial_number,))
-    result = cursor.fetchone()
-    return result and result[0] == hash_value
+@app.route('/')
+def index():
+    return render_template("index.html")
 
-def create_certificate_template(name, organization, issue_date, expiry_date, serial_number):
-    """Generate the certificate image and SHA-256 hash."""
-    width, height = 2480, 3508
-    cert_image = Image.new("RGB", (width, height), (255, 255, 255))
-    draw = ImageDraw.Draw(cert_image)
-    
-    font_large = ImageFont.truetype(FONT_PATH, 100)
-    font_medium = ImageFont.truetype(FONT_PATH, 60)
-    font_small = ImageFont.truetype(FONT_PATH, 40)
-    
-    draw.text((width // 4, 300), "Certificate of Achievement", fill="black", font=font_large)
-    draw.text((width // 4, 600), f"Awarded to: {name}", fill="black", font=font_medium)
-    draw.text((width // 4, 750), f"Organization: {organization}", fill="black", font=font_medium)
-    draw.text((width // 4, 900), f"Issue Date: {issue_date} | Expiry Date: {expiry_date}", fill="black", font=font_small)
-    draw.text((width // 4, 1000), f"Serial Number: {serial_number}", fill="black", font=font_small)
-    
-    cert_data = f"{name}|{organization}|{issue_date}|{expiry_date}|{serial_number}"
-    cert_hash = hashlib.sha256(cert_data.encode()).hexdigest()
-    
-    draw.text((width // 4, 1100), f"Hash: {cert_hash[:20]}...", fill="black", font=font_small)
-    return cert_image, cert_hash
+def generate_certificate(name, organization, issue_date, expiry_date, serial_number):
+    try:
+        # Certificate Text Template
+        certificate_text = f"""
+        -----------------------------------------
+                CERTIFICATE OF ACHIEVEMENT
+        -----------------------------------------
+
+        This is to certify that
+
+        Name: {name}
+        Organization: {organization}
+
+        Has successfully completed the requirements
+        of the program and is awarded this certificate.
+
+        Issue Date: {issue_date}
+        Expiry Date: {expiry_date}
+        Serial Number: {serial_number}
+
+        Certificate Issued On: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+
+        -----------------------------------------
+        """
+
+        # Generate SHA-256 hash for verification
+        cert_data = f"{name}|{organization}|{issue_date}|{expiry_date}|{serial_number}"
+        cert_hash = hashlib.sha256(cert_data.encode()).hexdigest()
+
+        # Add hash to certificate text
+        certificate_text += f"Certificate Hash: {cert_hash[:20]}...\n"  # Shortened hash
+
+        # Save the certificate to a text file
+        cert_filename = f"{OUTPUT_DIR}/certificate_{serial_number}.txt"
+        with open(cert_filename, "w") as file:
+            file.write(certificate_text)
+
+        # Store metadata for future verification
+        certificate_metadata[serial_number] = {
+            "name": name,
+            "organization": organization,
+            "issue_date": issue_date,
+            "expiry_date": expiry_date,
+            "serial_number": serial_number,
+            "hash": cert_hash
+        }
+
+        # Save metadata to a JSON file (used as a persistent storage)
+        with open(CERTIFICATE_METADATA_FILE, "w") as f:
+            json.dump(certificate_metadata, f)
+
+        return cert_filename
+
+    except Exception as e:
+        print(f"Error generating certificate: {e}")
+        return None
 
 @app.route('/generate', methods=['POST'])
 def generate():
-    """Generate a certificate and store its hash in the database."""
-    data = request.json
-    required_fields = ["name", "organization", "issue_date", "expiry_date", "serial_number"]
-    if not all(field in data and data[field] for field in required_fields):
+    name = request.form.get("name")
+    organization = request.form.get("organization")
+    issue_date = request.form.get("issue_date")
+    expiry_date = request.form.get("expiry_date")
+    serial_number = request.form.get("serial_number")
+
+    if not all([name, organization, issue_date, expiry_date, serial_number]):
         return jsonify({"error": "All fields are required"}), 400
 
-    cert_image, cert_hash = create_certificate_template(
-        data["name"], data["organization"], data["issue_date"], data["expiry_date"], data["serial_number"]
-    )
+    cert_html = generate_certificate(name, organization, issue_date, expiry_date, serial_number)
+    if not cert_html:
+        return jsonify({"error": "Failed to generate certificate"}), 500
 
-    cert_filename = f"{OUTPUT_DIR}/certificate_{data['serial_number']}.png"
-    cert_image.save(cert_filename)
-    
-    insert_certificate(data['serial_number'], cert_hash)
-    
-    return send_file(cert_filename, mimetype='image/png')
+    return jsonify({"success": True, "file_path": f"certificate_{serial_number}.txt"})
+
+
+
 
 @app.route('/authenticate', methods=['POST'])
 def authenticate():
-    """Authenticate a certificate by checking if its hash exists."""
-    data = request.json
-    serial_number = data.get("serial_number")
-    
+    serial_number = request.form.get("serial_number")
+
     if not serial_number:
         return jsonify({"error": "Serial number is required"}), 400
-    
-    cursor.execute("SELECT hash_value FROM certificates WHERE serial_number = %s", (serial_number,))
-    result = cursor.fetchone()
-    
-    if result:
-        return jsonify({"message": "Certificate is legitimate", "serial_number": serial_number, "hash": result[0]}), 200
-    else:
-        return jsonify({"error": "Certificate not found or invalid"}), 404
 
+    metadata = certificate_metadata.get(serial_number)
+    if not metadata:
+        return jsonify({"error": "Certificate not found"}), 404
+
+    # Retrieve stored hash and verify
+    stored_hash = metadata.get("hash")
+    if stored_hash:
+        return jsonify({"message": "Certificate is authentic"}), 200
+    else:
+        return jsonify({"error": "Certificate is not authentic"}), 400
+@app.route('/download')
+def download():
+    file_name = request.args.get('file')
+    file_path = os.path.join(OUTPUT_DIR, file_name)
+    if os.path.exists(file_path):
+        return send_file(file_path, as_attachment=True)
+    else:
+        return jsonify({"error": "File not found"}), 404
 if __name__ == '__main__':
     app.run(debug=True)

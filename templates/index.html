@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Certificate Generation and Authentication</title>
+    <!-- <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"> -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script> <!-- jQuery for AJAX -->
+    <style>
+        body {
+    font-family: Arial, sans-serif;
+    background-color: #f0f0f0;
+    margin: 0;
+    padding: 0;
+}
+
+.container {
+    max-width: 600px;
+    margin: 50px auto;
+    padding: 20px;
+    background-color: #fff;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+}
+
+h1 {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+label {
+    display: block;
+    margin-bottom: 5px;
+}
+
+input {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 20px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+}
+
+button {
+    width: 100%;
+    padding: 10px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Certificate Generation and Authentication</h1>
+        
+        <!-- Certificate Generation Form -->
+        <h2>Generate Certificate</h2>
+        <form id="generate-form">
+            <label for="name">Name:</label>
+            <input type="text" id="name" name="name" required>
+
+            <label for="organization">Organization:</label>
+            <input type="text" id="organization" name="organization" required>
+
+            <label for="issue_date">Issue Date:</label>
+            <input type="date" id="issue_date" name="issue_date" required>
+
+            <label for="expiry_date">Expiry Date:</label>
+            <input type="date" id="expiry_date" name="expiry_date" required>
+
+            <label for="serial_number">Serial Number:</label>
+            <input type="text" id="serial_number" name="serial_number" required>
+
+            <button type="submit">Generate Certificate</button>
+        </form>
+        
+        <div id="generate-result"></div>
+
+        <!-- Certificate Authentication Form -->
+        <h2>Authenticate Certificate</h2>
+        <form id="authenticate-form">
+            <label for="auth_serial_number">Serial Number:</label>
+            <input type="text" id="auth_serial_number" name="serial_number" required>
+
+            <button type="submit">Authenticate</button>
+        </form>
+        
+        <div id="auth-result"></div>
+    </div>
+
+    <script>
+     $("#generate-form").submit(function(event) {
+    event.preventDefault();
+
+    let formData = $(this).serialize(); // Get form data
+
+    $.ajax({
+        url: "/generate",
+        type: "POST",
+        data: formData,
+        dataType: "json",  // Ensures response is parsed correctly
+        success: function(response) {
+            console.log("Response:", response);  // Debugging
+            if (response.success) {
+                $("#generate-result").html(`
+                    <p>Certificate generated successfully!</p>
+                    <a href="/download?file=${response.file_path}" target="_blank">Download Certificate</a>
+                `);
+            } else {
+                $("#generate-result").html(`<p>Error: ${response.error}</p>`);
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error("Error:", xhr.responseText);
+            $("#generate-result").html(`<p>Error: ${xhr.responseText}</p>`);
+        }
+    });
+});
+
+
+        // Authenticate Certificate via AJAX
+        $("#authenticate-form").submit(function(event) {
+            event.preventDefault();
+
+            let formData = $(this).serialize(); // Get form data
+
+            $.ajax({
+                url: "/authenticate",
+                type: "POST",
+                data: formData,
+                success: function(response) {
+                    if (response.message) {
+                        $("#auth-result").html(`<p>${response.message}</p>`);
+                    } else {
+                        $("#auth-result").html(`<p>Error: ${response.error}</p>`);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    $("#auth-result").html(`<p>Error: ${xhr.responseJSON.error}</p>`);
+                }
+            });
+        });
+    </script>
+</body>
+</html>
