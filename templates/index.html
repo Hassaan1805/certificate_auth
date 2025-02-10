@@ -1,154 +1,448 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Certificate Generation and Authentication</title>
-    <!-- <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"> -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script> <!-- jQuery for AJAX -->
-    <style>
-        body {
-    font-family: Arial, sans-serif;
-    background-color: #f0f0f0;
-    margin: 0;
-    padding: 0;
-}
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- jQuery for AJAX -->
+  </head>
+  <body class="bg-gray-100 min-h-screen flex flex-col">
+    <!-- Navbar -->
+    <nav class="bg-blue-600 text-white p-4 shadow-md">
+      <div class="container mx-auto flex justify-between items-center">
+        <h1 class="text-xl font-bold">Cybernet1cs</h1>
+        <ul class="flex space-x-4">
+          <li><a href="#" class="hover:underline">Home</a></li>
+          <li><a href="#" class="hover:underline">About us</a></li>
+          <li><a href="#" class="hover:underline">Contact us</a></li>
+        </ul>
+      </div>
+    </nav>
+    <h2 class="text-2xl font-bold text-center text-blue-600 mt-4">
+      Certificate Authenticator
+    </h2>
+  <!-- Main Buttons -->
+<div class="mainContainer flex justify-center space-x-4 mt-10">
+    <!-- Generate Button -->
+    <button id="generate-btn" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+        Generate
+    </button>
+    <!-- Upload Button -->
+    <label for="upload-certificate" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded cursor-pointer">
+        Upload
+    </label>
+    <input type="file" id="upload-certificate" class="hidden" accept="image/*,application/pdf" />
+    <!-- Authenticate Button -->
+    <button id="authenticate-btn" class="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded" disabled>
+        Authenticate
+    </button>
+</div>
+  <!-- Container for Certificate Preview -->
+<div id="certificate-preview" class="mt-6 flex justify-center items-center">
+    <div id="preview-content" class="hidden flex flex-col items-center">
+        <!-- Image Preview -->
+        <img id="preview-image" src="" alt="Certificate Preview" class="max-w-full h-auto rounded-lg shadow-md hidden">
+        <!-- PDF Download Link -->
+        <a id="preview-pdf" href="#" target="_blank" class="text-blue-500 underline hidden">Download PDF</a>
+    </div>
+</div>
 
-.container {
-    max-width: 600px;
-    margin: 50px auto;
-    padding: 20px;
-    background-color: #fff;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    border-radius: 8px;
-}
+<!-- Authentication Result -->
+<div id="auth-result" class="container max-w-2xl mx-auto mt-10 bg-white p-6 rounded-lg shadow-md hidden">
+    <h1 class="text-2xl font-bold text-center mb-6">Authentication Result</h1>
+    <div id="auth-message" class="text-center"></div>
+</div>
 
-h1 {
-    text-align: center;
-    margin-bottom: 20px;
-}
-
-label {
-    display: block;
-    margin-bottom: 5px;
-}
-
-input {
-    width: 100%;
-    padding: 10px;
-    margin-bottom: 20px;
-    border-radius: 4px;
-    border: 1px solid #ccc;
-}
-
-button {
-    width: 100%;
-    padding: 10px;
-    background-color: #007bff;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    font-size: 16px;
-    cursor: pointer;
-}
-
-button:hover {
-    background-color: #0056b3;
-}
-
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>Certificate Generation and Authentication</h1>
-        
-        <!-- Certificate Generation Form -->
-        <h2>Generate Certificate</h2>
-        <form id="generate-form">
-            <label for="name">Name:</label>
-            <input type="text" id="name" name="name" required>
-
-            <label for="organization">Organization:</label>
-            <input type="text" id="organization" name="organization" required>
-
-            <label for="issue_date">Issue Date:</label>
-            <input type="date" id="issue_date" name="issue_date" required>
-
-            <label for="expiry_date">Expiry Date:</label>
-            <input type="date" id="expiry_date" name="expiry_date" required>
-
-            <label for="serial_number">Serial Number:</label>
-            <input type="text" id="serial_number" name="serial_number" required>
-
-            <button type="submit">Generate Certificate</button>
-        </form>
-        
-        <div id="generate-result"></div>
-
-        <!-- Certificate Authentication Form -->
-        <h2>Authenticate Certificate</h2>
-        <form id="authenticate-form">
-            <label for="auth_serial_number">Serial Number:</label>
-            <input type="text" id="auth_serial_number" name="serial_number" required>
-
-            <button type="submit">Authenticate</button>
-        </form>
-        
-        <div id="auth-result"></div>
+    <!-- Container for Certificate Generation -->
+    <div
+      id="certificate-container"
+      class="container hidden max-w-2xl mx-auto mt-10 bg-white p-6 rounded-lg shadow-md"
+    >
+      <h1 class="text-2xl font-bold text-center mb-6">
+        Certificate Generation
+      </h1>
+      <form id="generate-form" class="space-y-4">
+        <div>
+          <label for="name" class="block text-sm font-medium text-gray-700"
+            >Name:</label
+          >
+          <input
+            type="text"
+            id="name"
+            name="name"
+            required
+            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          />
+        </div>
+        <div>
+          <label
+            for="organization"
+            class="block text-sm font-medium text-gray-700"
+            >Organization:</label
+          >
+          <input
+            type="text"
+            id="organization"
+            name="organization"
+            required
+            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          />
+        </div>
+        <div>
+          <label
+            for="issue_date"
+            class="block text-sm font-medium text-gray-700"
+            >Issue Date:</label
+          >
+          <input
+            type="date"
+            id="issue_date"
+            name="issue_date"
+            required
+            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          />
+        </div>
+        <div>
+          <label
+            for="expiry_date"
+            class="block text-sm font-medium text-gray-700"
+            >Expiry Date:</label
+          >
+          <input
+            type="date"
+            id="expiry_date"
+            name="expiry_date"
+            required
+            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          />
+        </div>
+        <div>
+          <label
+            for="completion_date"
+            class="block text-sm font-medium text-gray-700"
+            >Completion Date:</label
+          >
+          <input
+            type="date"
+            id="completion_date"
+            name="completion_date"
+            required
+            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          />
+        </div>
+        <div>
+          <label
+            for="issuer"
+            class="block text-sm font-medium text-gray-700"
+            >Issuer:</label
+          >
+          <input
+            type="text"
+            id="issuer"
+            name="issuer"
+            required
+            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          />
+        </div>
+        <div>
+          <label
+            for="serial_number"
+            class="block text-sm font-medium text-gray-700"
+            >Serial Number:</label
+          >
+          <input
+            type="text"
+            id="serial_number"
+            name="serial_number"
+            required
+            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          />
+        </div>
+        <button
+          type="submit"
+          class="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+        >
+          Generate Certificate
+        </button>
+      </form>
+      <div id="generate-result" class="mt-4"></div>
     </div>
 
-    <script>
-     $("#generate-form").submit(function(event) {
-    event.preventDefault();
 
-    let formData = $(this).serialize(); // Get form data
+    <!-- About Us Section -->
+    <section
+      id="about-us"
+      class="container mx-auto mt-10 bg-white p-6 rounded-lg shadow-md"
+    >
+      <h2 class="text-2xl font-bold text-center mb-6 text-blue-600">
+        About Us
+      </h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <!-- Card 1 -->
+        <div
+          class="bg-gray-50 p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300"
+        >
+          <h3 class="text-lg font-semibold text-blue-600">Our Mission</h3>
+          <p class="mt-2 text-gray-700">
+            To provide secure and reliable certificate generation and
+            authentication services.
+          </p>
+        </div>
+        <!-- Card 2 -->
+        <div
+          class="bg-gray-50 p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300"
+        >
+          <h3 class="text-lg font-semibold text-blue-600">Our Vision</h3>
+          <p class="mt-2 text-gray-700">
+            To be the leading platform for digital certificates worldwide.
+          </p>
+        </div>
+        <!-- Card 3 -->
+        <div
+          class="bg-gray-50 p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300"
+        >
+          <h3 class="text-lg font-semibold text-blue-600">Our Values</h3>
+          <p class="mt-2 text-gray-700">
+            Integrity, Security, Innovation, and Customer Satisfaction.
+          </p>
+        </div>
+        <!-- Card 4 -->
+        <div
+          class="bg-gray-50 p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300"
+        >
+          <h3 class="text-lg font-semibold text-blue-600">Our Team</h3>
+          <p class="mt-2 text-gray-700">
+            A group of dedicated professionals committed to excellence.
+          </p>
+        </div>
+      </div>
+    </section>
+    <!-- Contact Us Section -->
+    <section
+      id="contact-us"
+      class="container mx-auto mt-10 bg-white p-6 rounded-lg shadow-md"
+    >
+      <h2 class="text-2xl font-bold text-center mb-6 text-blue-600">
+        Contact Us
+      </h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Contact Form -->
+        <form id="contact-form" class="space-y-4">
+          <div>
+            <label for="name" class="block text-sm font-medium text-gray-700"
+              >Name:</label
+            >
+            <input
+              type="text"
+              id="name"
+              name="name"
+              required
+              class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+            />
+          </div>
+          <div>
+            <label for="email" class="block text-sm font-medium text-gray-700"
+              >Email:</label
+            >
+            <input
+              type="email"
+              id="email"
+              name="email"
+              required
+              class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+            />
+          </div>
+          <div>
+            <label for="message" class="block text-sm font-medium text-gray-700"
+              >Message:</label
+            >
+            <textarea
+              id="message"
+              name="message"
+              rows="4"
+              required
+              class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+            ></textarea>
+          </div>
+          <button
+            type="submit"
+            class="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+          >
+            Submit
+          </button>
+        </form>
+        <!-- Contact Information -->
+        <div class="space-y-4">
+          <div>
+            <h3 class="text-lg font-semibold text-blue-600">Address</h3>
+            <p class="text-gray-700">
+              123 Cybernetics Lane, Tech City, CA 90001
+            </p>
+          </div>
+          <div>
+            <h3 class="text-lg font-semibold text-blue-600">Phone</h3>
+            <p class="text-gray-700">+1 (123) 456-7890</p>
+          </div>
+          <div>
+            <h3 class="text-lg font-semibold text-blue-600">Email</h3>
+            <p class="text-gray-700">info@cybernet1cs.com</p>
+          </div>
+          <div></div>
+        </div>
+      </div>
+    </section>
+    <footer class="bg-blue-600 text-white text-center p-4 mt-auto">
+      <p>&copy; 2025 Cybernet1cs. All Rights Reserved.</p>
+    </footer>
+
+    <script>
+      // Show/Hide container when "Generate" button is clicked
+      $("#generate-btn").click(function () {
+        $("#certificate-container").toggleClass("hidden");
+        $("#authenticate-container").addClass("hidden"); // Hide authentication container
+      });
+
+      // Show/Hide container when "Authenticate" button is clicked
+      $("#authenticate-btn").click(function () {
+        $("#authenticate-container").toggleClass("hidden");
+        $("#certificate-container").addClass("hidden"); // Hide generation container
+      });
+
+      // Handle certificate generation form submission
+      $("#generate-form").submit(function (event) {
+        event.preventDefault();
+        let formData = $(this).serialize();
+        $.ajax({
+            url: "/generate",
+            type: "POST",
+            data: formData,
+            dataType: "json",
+            success: function (response) {
+                if (response.success) {
+                    $("#generate-result").html(`
+                        <p class="text-green-600">Certificate generated successfully!</p>
+                        <a href="/download?file=${response.file_path}" target="_blank" class="text-blue-500 underline">Download Certificate</a>
+                    `);
+                } else {
+                    $("#generate-result").html(`<p class="text-red-600">Error: ${response.error}</p>`);
+                }
+            },
+            error: function (xhr, status, error) {
+                $("#generate-result").html(`<p class="text-red-600">Error: ${xhr.responseText}</p>`);
+            },
+        });
+    });
+
+// Handle file upload
+$("#upload-certificate").change(function(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const previewContent = document.getElementById("preview-content");
+    const previewImage = document.getElementById("preview-image");
+    const previewPdf = document.getElementById("preview-pdf");
+
+    // Clear previous preview
+    previewImage.classList.add("hidden");
+    previewPdf.classList.add("hidden");
+    previewContent.classList.add("hidden");
+
+    if (file.type.startsWith("image/") || file.type === "application/pdf") {
+        // Handle image preview or PDF link
+        if (file.type.startsWith("image/")) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewImage.src = e.target.result;
+                previewImage.classList.remove("hidden");
+                previewContent.classList.remove("hidden");
+            };
+            reader.readAsDataURL(file);
+        } else if (file.type === "application/pdf") {
+            const pdfUrl = URL.createObjectURL(file);
+            previewPdf.href = pdfUrl;
+            previewPdf.textContent = `Download ${file.name}`;
+            previewPdf.classList.remove("hidden");
+            previewContent.classList.remove("hidden");
+        }
+
+        // Enable the Authenticate button
+        $("#authenticate-btn").prop("disabled", false);
+
+        // Store the uploaded file in a global variable
+        window.uploadedFile = file;
+    } else {
+        alert("Please upload a valid image or PDF file.");
+    }
+});
+
+// Handle certificate authentication
+$("#authenticate-btn").click(function() {
+    const file = window.uploadedFile;
+    if (!file) {
+        alert("No certificate uploaded. Please upload a certificate first.");
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", file);
 
     $.ajax({
-        url: "/generate",
+        url: "/upload",
         type: "POST",
         data: formData,
-        dataType: "json",  // Ensures response is parsed correctly
+        processData: false,
+        contentType: false,
         success: function(response) {
-            console.log("Response:", response);  // Debugging
-            if (response.success) {
-                $("#generate-result").html(`
-                    <p>Certificate generated successfully!</p>
-                    <a href="/download?file=${response.file_path}" target="_blank">Download Certificate</a>
+            if (response.message === "Certificate is authentic") {
+                $("#auth-message").html(`
+                    <p class="text-green-600">Certificate is valid!</p>
+                    <p>Name: ${response.details.name}</p>
+                    <p>Completion Date: ${response.details.completion_date}</p>
+                    <p>Issuer: ${response.details.issuer}</p>
                 `);
             } else {
-                $("#generate-result").html(`<p>Error: ${response.error}</p>`);
+                $("#auth-message").html(`<p class="text-red-600">${response.error}</p>`);
             }
+            $("#auth-result").removeClass("hidden");
         },
         error: function(xhr, status, error) {
-            console.error("Error:", xhr.responseText);
-            $("#generate-result").html(`<p>Error: ${xhr.responseText}</p>`);
+            $("#auth-message").html(`<p class="text-red-600">Error: ${xhr.responseText}</p>`);
+            $("#auth-result").removeClass("hidden");
         }
     });
 });
+      $("#remove-btn").click(function () {
+        const previewContent = document.getElementById("preview-content");
+        const previewImage = document.getElementById("preview-image");
+        const previewPdf = document.getElementById("preview-pdf");
 
+        // Clear the preview
+        previewImage.src = "";
+        previewImage.classList.add("hidden");
+        previewPdf.href = "#";
+        previewPdf.textContent = "";
+        previewPdf.classList.add("hidden");
+        previewContent.classList.add("hidden");
 
-        // Authenticate Certificate via AJAX
-        $("#authenticate-form").submit(function(event) {
-            event.preventDefault();
+        // Reset the file input
+        $("#upload-certificate").val("");
 
-            let formData = $(this).serialize(); // Get form data
-
-            $.ajax({
-                url: "/authenticate",
-                type: "POST",
-                data: formData,
-                success: function(response) {
-                    if (response.message) {
-                        $("#auth-result").html(`<p>${response.message}</p>`);
-                    } else {
-                        $("#auth-result").html(`<p>Error: ${response.error}</p>`);
-                    }
-                },
-                error: function(xhr, status, error) {
-                    $("#auth-result").html(`<p>Error: ${xhr.responseJSON.error}</p>`);
-                }
-            });
+        // Optionally, send a request to delete the file from the server
+        $.ajax({
+          url: "/delete",
+          type: "POST",
+          data: { action: "delete" },
+          success: function (response) {
+            console.log("File removed successfully:", response);
+          },
+          error: function (xhr, status, error) {
+            console.error("Error removing file:", xhr.responseText);
+          },
         });
+      });
     </script>
-</body>
+  </body>
 </html>
