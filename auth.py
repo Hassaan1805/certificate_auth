@@ -2,13 +2,16 @@ from flask import Flask, request, render_template, jsonify, send_file
 import hashlib
 import os
 from datetime import datetime
-from PyPDF2 import PdfReader
 import pytesseract
 from PIL import Image
 import mysql.connector
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 import requests
+import cv2
+import numpy as np
+import fitz  # PyMuPDF
+from PyPDF2 import PdfReader  # Add this import
 
 app = Flask(__name__)
 
@@ -242,6 +245,102 @@ def upload_udemy():
             return jsonify({"error": "Udemy certificate URL is not valid"}), 400
     except requests.RequestException as e:
         return jsonify({"error": f"Failed to verify Udemy certificate URL: {str(e)}"}), 500
+
+@app.route('/upload_great_learning', methods=['POST'])
+def upload_great_learning():
+    if 'file' not in request.files:
+        return jsonify({"error": "No file uploaded"}), 400
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({"error": "No selected file"}), 400
+
+    file_path = os.path.join(OUTPUT_DIR, file.filename)
+    file.save(file_path)
+    extracted_text = ""
+    try:
+        if file.content_type == "application/pdf":
+            reader = PdfReader(file_path)
+            for page in reader.pages:
+                extracted_text += page.extract_text()
+        elif file.content_type.startswith("image/"):
+            image = Image.open(file_path)
+            extracted_text = pytesseract.image_to_string(image)
+    except Exception as e:
+        return jsonify({"error": f"Failed to extract text: {str(e)}"}), 500
+
+    certificate_url = None
+    for line in extracted_text.split("\n"):
+        if "greatlearning" in line:
+            # Clean the URL by removing any extra text and spaces
+            certificate_url = line.strip().replace("Certificate url:", "").strip()
+            break
+
+    if not certificate_url:
+        return jsonify({"error": "Cant detect a legit Great Learning URL , This certiifcate might be fraud"}), 400
+
+    # Ensure the URL is properly formatted
+    if not certificate_url.startswith("http"):
+        certificate_url = "https://" + certificate_url
+
+    try:
+        response = requests.get(certificate_url)
+        if response.status_code == 200:
+            return jsonify({"message": "Great Learning certificate is valid", "certificate_url": certificate_url}), 200
+        else:
+            return jsonify({"error": "Great Learning certificate URL is not valid"}), 400
+    except requests.RequestException as e:
+        return jsonify({"error": f"Failed to verify Great Learning certificate URL: {str(e)}"}), 500
+
+@app.route('/upload_google_education', methods=['POST'])
+def upload_google_education():
+    if 'file' not in request.files:
+        return jsonify({"error": "No file uploaded"}), 400
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({"error": "No selected file"}), 400
+
+    file_path = os.path.join(OUTPUT_DIR, file.filename)
+    file.save(file_path)
+
+    try:
+        if file.content_type == "application/pdf":
+            doc = fitz.open(file_path)
+            for page in doc:
+                page_image = convert_pdf_page_to_image(page)
+                qr_code_url = extract_qr_code(page_image)
+                if qr_code_url:
+                    break
+        elif file.content_type.startswith("image/"):
+            image = Image.open(file_path)
+            qr_code_url = extract_qr_code(image)
+    except Exception as e:
+        return jsonify({"error": f"Failed to extract QR code: {str(e)}"}), 500
+
+    if not qr_code_url:
+        return jsonify({"error": "Cannot detect a valid Google QR code in the uploaded file, This might be a fraud"}), 400
+
+    if "skillshop.credential.net" in qr_code_url:
+        return jsonify({"message": "Google Education certificate is valid", "certificate_url": qr_code_url}), 200
+    else:
+        return jsonify({"error": "Google Education certificate URL is not valid"}), 400
+
+def convert_pdf_page_to_image(page):
+    # Convert PDF page to image using PyMuPDF
+    pix = page.get_pixmap()
+    img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+    return img
+
+def extract_qr_code(image):
+    try:
+        image_np = np.array(image)
+        gray = cv2.cvtColor(image_np, cv2.COLOR_BGR2GRAY)
+        qr_detector = cv2.QRCodeDetector()
+        data, _, _ = qr_detector.detectAndDecode(gray)
+        return data
+    except Exception as e:
+        print(f"Error extracting QR code: {e}")
+        return None
+
 @app.route('/download')
 def download():
     file_name = request.args.get('file')

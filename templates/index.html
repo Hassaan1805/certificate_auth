@@ -8,6 +8,7 @@
     <!-- Tailwind CSS CDN -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <!-- jQuery for AJAX -->
+
   </head>
   <body class="bg-gray-100 min-h-screen flex flex-col">
     <!-- Navbar -->
@@ -236,6 +237,12 @@
         } else if (authority === "udemy") {
             // Trigger file input for Udemy certificate
             $("#upload-certificate").click();
+        } else if (authority === "great-learning") {
+            // Trigger file input for Great Learning certificate
+            $("#upload-certificate").click();
+        } else if (authority === "google-education") {
+            // Trigger file input for Google Education certificate
+            $("#upload-certificate").click();
         } else {
             // Placeholder for other issuing organizations
             alert(`Selected issuing authority: ${authority}`);
@@ -301,6 +308,13 @@
         if (authority === "udemy") {
             url = "/upload_udemy";
         }
+        else if (authority === "great-learning") {
+            url = "/upload_great_learning";
+        }
+        else if (authority === "google-education") {
+            url = "/upload_google_education";
+        }
+    
 
         $.ajax({
             url: url,
@@ -309,7 +323,7 @@
             processData: false,
             contentType: false,
             success: function(response) {
-                if (response.message === "Certificate is authentic" || response.message === "Udemy certificate is valid") {
+                if (response.message === "Certificate is authentic" || response.message === "Udemy certificate is valid" || response.message === "Great Learning certificate is valid" || response.message === "Google Education certificate is valid") {
                     $("#auth-message").html(`
                         <p class="text-green-600">${response.message}</p>
                         <p>Name: ${response.details?.name || ''}</p>
