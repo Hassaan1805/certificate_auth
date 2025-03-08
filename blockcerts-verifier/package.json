@@ -1,0 +1,16 @@
+{
+  "name": "blockcerts-verifier",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@blockcerts/cert-verifier-js": "^6.27.1",
+    "express": "^4.21.2"
+  }
+}

@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "@blockcerts/cert-verifier-js": "^6.27.1",
     "flyonui": "^1.3.0"
   }
 }
