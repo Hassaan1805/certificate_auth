@@ -8,74 +8,180 @@
     <!-- Tailwind CSS CDN -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <!-- jQuery for AJAX -->
+    <style>
+      /* Cool Animated Background */
+      body {
+          margin: 0;
+          padding: 0;
+          background: linear-gradient(120deg, #1a202c, #2b6cb0, #6b46c1);
+          background-size: 300% 300%;
+          animation: gradientShift 15s ease infinite;
+          color: #e2e8f0; /* Text color for readability */
+          cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><path fill="%23A855F7" d="M0 0h24v24H0z" fill="none"/><path fill="%23A855F7" d="M6 2l12 10-5 1-1 5z"/></svg>'), auto;
+      }
+
+      @keyframes gradientShift {
+          0% {
+              background-position: 0% 50%;
+          }
+          50% {
+              background-position: 100% 50%;
+          }
+          100% {
+              background-position: 0% 50%;
+          }
+      }
+
+      /* Particle Effect */
+      .particles {
+          position: absolute;
+          width: 100%;
+          height: 100%;
+          overflow: hidden;
+          z-index: -1;
+      }
+
+      .particle {
+          position: absolute;
+          width: 5px;
+          height: 5px;
+          background: rgba(255, 255, 255, 0.8);
+          border-radius: 50%;
+          animation: float 10s linear infinite;
+      }
+
+      @keyframes float {
+          0% {
+              transform: translateY(100vh) translateX(0);
+              opacity: 1;
+          }
+          100% {
+              transform: translateY(-100vh) translateX(50px);
+              opacity: 0;
+          }
+      }
+
+      /* Generate random particles */
+      .particles .particle:nth-child(1) {
+          left: 10%;
+          animation-duration: 12s;
+          animation-delay: 0s;
+      }
+
+      .particles .particle:nth-child(2) {
+          left: 30%;
+          animation-duration: 8s;
+          animation-delay: 2s;
+      }
+
+      .particles .particle:nth-child(3) {
+          left: 50%;
+          animation-duration: 10s;
+          animation-delay: 4s;
+      }
+
+      .particles .particle:nth-child(4) {
+          left: 70%;
+          animation-duration: 14s;
+          animation-delay: 6s;
+      }
+
+      .particles .particle:nth-child(5) {
+          left: 90%;
+          animation-duration: 9s;
+          animation-delay: 8s;
+      }
+      
+  </style>
 
   </head>
-  <body class="bg-gray-100 min-h-screen flex flex-col">
+  <body class="bg-gradient-to-br from-purple-800 via-gray-900 to-blue-900 text-gray-200">
+    <div class="particles">
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+  </div>
     <!-- Navbar -->
-    <nav class="bg-blue-600 text-white p-4 shadow-md">
-      <div class="container mx-auto flex justify-between items-center">
-        <h1 class="text-xl font-bold">Cybernet1cs</h1>
-        <ul class="flex space-x-4">
-          <li><a href="#" class="hover:underline">Home</a></li>
-          <li><a href="#" class="hover:underline">About us</a></li>
-          <li><a href="#" class="hover:underline">Contact us</a></li>
-        </ul>
-      </div>
-    </nav>
-    <h2 class="text-2xl font-bold text-center text-blue-600 mt-4">
-      Certificate Authenticator
-    </h2>
+    <nav class="flex justify-between items-center p-6 bg-black border-b border-purple-500">
+      <ul class="flex space-x-6">
+          <li><a href="#" onclick="showPage('login')"  class="hover:text-purple-400"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A3.001 3.001 0 018 16h8a3.001 3.001 0 012.879 1.804M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg></a></li>
+      </ul>
+      <h1 class="text-3xl ml-40 font-bold text-purple-400 animate-bounce">cybernet1cs</h1>
+      <ul class="flex space-x-6">
+          <li><a href="#" onclick="showPage('home')" class="hover:text-purple-400 animate-bounce">Home</a></li>
+          <li><a href="#about" class="hover:text-purple-400 animate-bounce">About Us</a></li>
+          <li><a href="#contact" class="hover:text-purple-400 animate-bounce">Contact Us</a></li>
+      </ul>
+  </nav>
+
+  <!--Hero section-->
+  <section id="home" class="page flex flex-col items-center justify-center  text-center mt-10">
+    <div class="glass p-10 rounded-2xl shadow-lg border border-purple-500 max-w-4xl">
+        <h1 class="text-5xl font-extrabold text-purple-400 mb-4 animate-bounce">Welcome to cybernet1cs</h1>
+        <p class="text-lg text-gray-300 mb-6">
+            Your one-stop solution for secure digital certificates and authentication. 
+            We ensure trust, transparency, and security in every step of your journey.
+        </p>
     <div class="mainContainer flex justify-center space-x-4 mt-10">
-      <button id="generate-btn" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+      <button id="generate-btn" class="bg-green-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg transition-all transform hover:scale-105">
         Generate
       </button>
-      <button id="upload-btn" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
+      <button id="upload-btn" class="bg-blue-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg transition-all transform hover:scale-105">
         Upload
       </button>
-      <button id="authenticate-btn" class="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded" disabled>
+      <button id="authenticate-btn" class="bg-red-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg transition-all transform hover:scale-105" disabled>
         Authenticate
       </button>
     </div>
+
+    
+
+
+  </section>
+
     <div id="certificate-preview" class="mt-6 flex justify-center items-center">
       <div id="preview-content" class="hidden flex flex-col items-center">
         <img id="preview-image" src="" alt="Certificate Preview" class="max-w-full h-auto rounded-lg shadow-md hidden">
         <a id="preview-pdf" href="#" target="_blank" class="text-blue-500 underline hidden">Download PDF</a>
       </div>
     </div>
-    <div id="auth-result" class="container max-w-2xl mx-auto mt-10 bg-white p-6 rounded-lg shadow-md hidden">
-      <h1 class="text-2xl font-bold text-center mb-6">Authentication Result</h1>
+    <div id="auth-result" class="hidden glass p-6 rounded-2xl shadow-lg border border-purple-500 w-96 mt-6 mx-auto flex flex-col items-center justify-center">
+      <h1 class="text-2xl font-bold text-purple-400 animate-bounce mb-4">Authentication Result</h1>
       <div id="auth-message" class="text-center"></div>
     </div>
-    <div id="certificate-container" class="container hidden max-w-2xl mx-auto mt-10 bg-white p-6 rounded-lg shadow-md">
-      <h1 class="text-2xl font-bold text-center mb-6">Certificate Generation</h1>
-      <form id="generate-form" class="space-y-4">
+
+    <div id="certificate-container" class="hidden glass p-6 rounded-2xl shadow-lg border border-purple-500 w-96 mt-6 mx-auto flex flex-col items-center justify-center">
+      <h1 class="text-4xl font-bold text-purple-400 animate-bounce text-center">Certificate Generation</h1>
+      <form id="generate-form" class="space-y-4 w-full">
         <div>
-          <label for="name" class="block text-sm font-medium text-gray-700">Name:</label>
-          <input type="text" id="name" name="name" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
+          <label for="name" class="text-lg text-gray-300 mb-6">Name:</label>
+          <input type="text" id="name" name="name" required class="mt-1 block w-full px-3 py-2 border border-black-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black" />
         </div>
         <div>
-          <label for="organization" class="block text-sm font-medium text-gray-700">Organization:</label>
-          <input type="text" id="organization" name="organization" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
+          <label for="organization" class="text-lg text-gray-300 mb-6">Organization:</label>
+          <input type="text" id="organization" name="organization" required class="mt-1 block w-full px-3 py-2 border border-black-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black" />
         </div>
         <div>
-          <label for="issue_date" class="block text-sm font-medium text-gray-700">Issue Date:</label>
-          <input type="date" id="issue_date" name="issue_date" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
+          <label for="issue_date" class="text-lg text-gray-300 mb-6">Issue Date:</label>
+          <input type="date" id="issue_date" name="issue_date" required class="mt-1 block w-full px-3 py-2 border border-black-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black" />
         </div>
         <div>
-          <label for="expiry_date" class="block text-sm font-medium text-gray-700">Expiry Date:</label>
-          <input type="date" id="expiry_date" name="expiry_date" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
+          <label for="expiry_date" class="text-lg text-gray-300 mb-6">Expiry Date:</label>
+          <input type="date" id="expiry_date" name="expiry_date" required class="mt-1 block w-full px-3 py-2 border border-black-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black" />
         </div>
         <div>
-          <label for="completion_date" class="block text-sm font-medium text-gray-700">Completion Date:</label>
-          <input type="date" id="completion_date" name="completion_date" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
+          <label for="completion_date" class="text-lg text-gray-300 mb-6">Completion Date:</label>
+          <input type="date" id="completion_date" name="completion_date" required class="mt-1 block w-full px-3 py-2 border border-black-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black" />
         </div>
         <div>
-          <label for="issuer" class="block text-sm font-medium text-gray-700">Issuer:</label>
-          <input type="text" id="issuer" name="issuer" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
+          <label for="issuer" class="text-lg text-gray-300 mb-6">Issuer:</label>
+          <input type="text" id="issuer" name="issuer" required class="mt-1 block w-full px-3 py-2 border border-black-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black" />
         </div>
         <div>
-          <label for="serial_number" class="block text-sm font-medium text-gray-700">Serial Number:</label>
-          <input type="text" id="serial_number" name="serial_number" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
+          <label for="serial_number" class="text-lg text-gray-300 mb-6">Serial Number:</label>
+          <input type="text" id="serial_number" name="serial_number" required class="mt-1 block w-full px-3 py-2 border border-black-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-black" />
         </div>
         <button type="submit" class="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
           Generate Certificate
@@ -85,103 +191,108 @@
     </div>
 
     <!-- Modal for selecting issuing authority -->
-    <div id="upload-modal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 hidden">
-      <div class="bg-white p-6 rounded-lg shadow-lg">
-        <h2 class="text-xl font-bold mb-4">Select Issuing Authority</h2>
-        <select id="issuing-authority" class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-          <option value="udemy">Udemy</option>
-          <option value="great-learning">Great Learning</option>
-          <option value="google-education">Google Education</option>
-          <option value="other">Other</option>
-        </select>
-        <div class="mt-4 flex justify-end">
-          <button id="cancel-upload" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded mr-2">Cancel</button>
-          <button id="confirm-upload" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Confirm</button>
-        </div>
-      </div>
+    <div id="upload-modal" class="glass p-6 rounded-2xl shadow-lg border border-purple-500 w-96 mt-6 mx-auto flex flex-col items-center justify-center hidden">
+    <h2 class="text-2xl font-bold text-purple-400 animate-bounce mb-4">Select Issuing Authority</h2>
+    <select id="issuing-authority" class="block w-full px-3 py-2 border border-purple-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-gray-800 text-gray-200">
+        <option value="udemy" class="bg-gray-800 text-gray-200">Udemy</option>
+        <option value="great-learning" class="bg-gray-800 text-gray-200">Great Learning</option>
+        <option value="google-education" class="bg-gray-800 text-gray-200">Google Education</option>
+        <option value="other" class="bg-gray-800 text-gray-200">Other</option>
+    </select>
+    <div class="mt-4 flex justify-end w-full">
+        <button id="cancel-upload" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded mr-2">Cancel</button>
+        <button id="confirm-upload" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Confirm</button>
     </div>
+</div>
 
     <input type="file" id="upload-certificate" class="hidden" />
+   <!-- Add this section below the "Welcome to cybernet1cs" part -->
+   <section id="about" class="max-w-4xl w-full mt-12 mb-10 mx-auto">
+    <h2 class="text-4xl font-bold text-purple-400 text-center mb-8">About Us</h2>
+    <p class="text-lg text-gray-300 text-center mb-6">
+        We are passionate and like-minded developers coming together with a keen interest in problem-solving.
+    </p>
+    <p class="text-lg text-gray-300 text-center mb-6">
+        We are making Certificate Authenticator. We are cybernet1cs.
+    </p>
+</section>
 
-    <!-- About Us Section -->
-    <section id="about-us" class="container mx-auto mt-10 bg-white p-6 rounded-lg shadow-md">
-      <h2 class="text-2xl font-bold text-center mb-6 text-blue-600">About Us</h2>
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <!-- Card 1 -->
-        <div class="bg-gray-50 p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300">
-          <h3 class="text-lg font-semibold text-blue-600">Our Mission</h3>
-          <p class="mt-2 text-gray-700">
-            To provide secure and reliable certificate generation and authentication services.
-          </p>
+<section class="max-w-4xl w-full mb-20 mx-auto">
+    <h2 class="text-4xl font-bold text-purple-400 text-center mb-8">Our Team</h2>
+    <div class="grid text-center grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="glass p-6 rounded-2xl shadow-lg border border-blue-500">
+            <img src="https://i.ibb.co/fV0TFLpX/profile-icon-design-free-vector.jpg" alt="Shaikh hassaan" class="w-24 h-24 rounded-full mx-auto mb-4">
+            <h3 class="text-xl font-bold">Shaikh hassaan</h3>
+            <div class="flex justify-center space-x-4 mt-4">
+                <a href="#" class="text-blue-400"><img src="https://img.icons8.com/color/48/000000/linkedin.png" alt="LinkedIn" class="w-6 h-6"/></a>
+                <a href="#" class="text-red-400"><img src="https://img.icons8.com/color/48/000000/gmail.png" alt="Gmail" class="w-6 h-6"/></a>
+            </div>
         </div>
-        <!-- Card 2 -->
-        <div class="bg-gray-50 p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300">
-          <h3 class="text-lg font-semibold text-blue-600">Our Vision</h3>
-          <p class="mt-2 text-gray-700">
-            To be the leading platform for digital certificates worldwide.
-          </p>
+        <div class="glass p-6 rounded-2xl shadow-lg border border-blue-500">
+            <img src="https://i.ibb.co/fV0TFLpX/profile-icon-design-free-vector.jpg" alt="zaid ansari" class="w-24 h-24 rounded-full mx-auto mb-4">
+            <h3 class="text-xl font-bold">zaid ansari</h3>
+            <div class="flex justify-center space-x-4 mt-4">
+                <a href="#" class="text-blue-400"><img src="https://img.icons8.com/color/48/000000/linkedin.png" alt="LinkedIn" class="w-6 h-6"/></a>
+                <a href="#" class="text-red-400"><img src="https://img.icons8.com/color/48/000000/gmail.png" alt="Gmail" class="w-6 h-6"/></a>
+            </div>
         </div>
-        <!-- Card 3 -->
-        <div class="bg-gray-50 p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300">
-          <h3 class="text-lg font-semibold text-blue-600">Our Values</h3>
-          <p class="mt-2 text-gray-700">
-            Integrity, Security, Innovation, and Customer Satisfaction.
-          </p>
+        <div class="glass p-6 rounded-2xl shadow-lg border border-blue-500">
+            <img src="https://i.ibb.co/fV0TFLpX/profile-icon-design-free-vector.jpg" alt="gracian lopes" class="w-24 h-24 rounded-full mx-auto mb-4">
+            <h3 class="text-xl font-bold">gracian lopes</h3>
+            <div class="flex justify-center space-x-4 mt-4">
+                <a href="#" class="text-blue-400"><img src="https://img.icons8.com/color/48/000000/linkedin.png" alt="LinkedIn" class="w-6 h-6"/></a>
+                <a href="#" class="text-red-400"><img src="https://img.icons8.com/color/48/000000/gmail.png" alt="Gmail" class="w-6 h-6"/></a>
+            </div>
         </div>
-        <!-- Card 4 -->
-        <div class="bg-gray-50 p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300">
-          <h3 class="text-lg font-semibold text-blue-600">Our Team</h3>
-          <p class="mt-2 text-gray-700">
-            A group of dedicated professionals committed to excellence.
-          </p>
+        <div class="glass p-6 rounded-2xl shadow-lg border border-blue-500">
+            <img src="https://i.ibb.co/fV0TFLpX/profile-icon-design-free-vector.jpg" alt="atharva tike" class="w-24 h-24 rounded-full mx-auto mb-4">
+            <h3 class="text-xl font-bold">atharva tike</h3>
+            <div class="flex justify-center space-x-4 mt-4">
+                <a href="#" class="text-blue-400"><img src="https://img.icons8.com/color/48/000000/linkedin.png" alt="LinkedIn" class="w-6 h-6"/></a>
+                <a href="#" class="text-red-400"><img src="https://img.icons8.com/color/48/000000/gmail.png" alt="Gmail" class="w-6 h-6"/></a>
+            </div>
         </div>
-      </div>
-    </section>
-    <!-- Contact Us Section -->
-    <section id="contact-us" class="container mx-auto mt-10 bg-white p-6 rounded-lg shadow-md">
-      <h2 class="text-2xl font-bold text-center mb-6 text-blue-600">Contact Us</h2>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <!-- Contact Form -->
-        <form id="contact-form" class="space-y-4">
-          <div>
-            <label for="name" class="block text-sm font-medium text-gray-700">Name:</label>
-            <input type="text" id="name" name="name" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
-          </div>
-          <div>
-            <label for="email" class="block text-sm font-medium text-gray-700">Email:</label>
-            <input type="email" id="email" name="email" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
-          </div>
-          <div>
-            <label for="message" class="block text-sm font-medium text-gray-700">Message:</label>
-            <textarea id="message" name="message" rows="4" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"></textarea>
-          </div>
-          <button type="submit" class="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-            Submit
-          </button>
+    </div>
+</section>
+
+<section id="contact" class="max-w-4xl w-full mb-10 mx-auto flex flex-col items-center justify-center text-center">
+    <h2 class="text-4xl font-bold text-purple-400 animate-bounce mb-8">Contact Us</h2>
+    <div class="glass p-6 rounded-2xl shadow-lg border border-purple-500 w-full">
+        <form>
+            <input type="text" placeholder="Name" class="w-full p-2 mb-2 text-black rounded-lg">
+            <input type="email" placeholder="Email" class="w-full p-2 mb-2 text-black rounded-lg">
+            <textarea placeholder="Message" class="w-full p-2 mb-2 text-black rounded-lg"></textarea>
+            <button class="mt-4 bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg w-full transition-all">Send Message</button>
         </form>
-        <!-- Contact Information -->
-        <div class="space-y-4">
-          <div>
-            <h3 class="text-lg font-semibold text-blue-600">Address</h3>
-            <p class="text-gray-700">123 Cybernetics Lane, Tech City, CA 90001</p>
-          </div>
-          <div>
-            <h3 class="text-lg font-semibold text-blue-600">Phone</h3>
-            <p class="text-gray-700">+1 (123) 456-7890</p>
-          </div>
-          <div>
-            <h3 class="text-lg font-semibold text-blue-600">Email</h3>
-            <p class="text-gray-700">info@cybernet1cs.com</p>
-          </div>
-          <div></div>
-        </div>
+    </div>
+</section>
+<section id="login" class="page hidden flex flex-col items-center justify-center h-screen text-center">
+  <h2 class="text-4xl font-bold text-purple-400 animate-bounce">Login</h2>
+  <div class="glass p-6 rounded-2xl shadow-lg border border-purple-500 w-96">
+      <input type="text" placeholder="Username" class="w-full p-2 mb-2 text-black rounded-lg">
+      <input type="password" placeholder="Password" class="w-full p-2 mb-4 text-black rounded-lg">
+      <button class="mt-4 bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg w-full transition-all">Login</button>
+      <div class="flex items-center my-4">
+          <hr class="flex-grow border-gray-400">
+          <span class="mx-2 text-gray-400">OR</span>
+          <hr class="flex-grow border-gray-400">
       </div>
-    </section>
-    <footer class="bg-blue-600 text-white text-center p-4 mt-auto">
-      <p>&copy; 2025 Cybernet1cs. All Rights Reserved.</p>
-    </footer>
-
+      <button class="bg-white hover:bg-gray-100 text-black font-bold py-2 px-4 rounded-lg w-full flex items-center justify-center transition-all shadow-md">
+          <img src="https://img.icons8.com/?size=100&id=17949&format=png&color=000000" alt="Google Logo" class="w-5 h-5 mr-2">
+          Login with Google
+      </button>
+  </div>
+</section>
     <script>
+    
+       function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(page => {
+                page.classList.add('hidden');
+                page.classList.remove('fade-in');
+            });
+            document.getElementById(pageId).classList.remove('hidden');
+            document.getElementById(pageId).classList.add('fade-in');
+        }
       $("#generate-btn").click(function () {
         $("#certificate-container").toggleClass("hidden");
         $("#authenticate-container").addClass("hidden"); 
@@ -325,7 +436,7 @@
             success: function(response) {
                 if (response.message === "Certificate is authentic" || response.message === "Udemy certificate is valid" || response.message === "Great Learning certificate is valid" || response.message === "Google Education certificate is valid") {
                     $("#auth-message").html(`
-                        <p class="text-green-600">${response.message}</p>
+                        <p class="text-3x1 text-green-600 font-bold ">${response.message}</p>
                         <p>Name: ${response.details?.name || ''}</p>
                         <p>Completion Date: ${response.details?.completion_date || ''}</p>
                         <p>Issuer: ${response.details?.issuer || ''}</p>
