@@ -1,172 +1,71 @@
-# Certificate Authenticator Backend
+🛡️ Certificate Authenticator Simulator
 
-This is the Flask backend for the Certificate Authenticator feature integrated into the DIDfinal project.
+🚀 Introduction
 
-## Prerequisites
+Welcome to the **Certificate Authenticator Simulator**! This project is a Python Flask-based web app crafted to help users *easily* verify digital certificates from popular educational platforms—and even your own! 🔍✨
 
-- Python 3.8+
-- MySQL database
-- Required Python packages (see requirements below)
+- 🟢 For **Google Education** certificates, simply upload your cert—the app will scan the QR code and *instantly* check if it exists on Google’s platform.
+- 📄 For **Great Learning** and **Udemy** certificates, just provide the certificate URL, and the simulator checks its validity online in real-time.
+- 🌟 For **Other** platforms, the simulator generates a unique dummy certificate with a secure hash, storing it in a local MySQL database. When you select “Others,” the backend fetches and cross-checks the hash for authenticity.
 
-## Installation
+This tool is perfect for anyone who wants to explore QR code detection, URL validation, and backend hashes in a fun, interactive way. Whether you’re learning, demoing, or just experimenting—this simulator makes the process simple and friendly!
 
-1. **Install Python dependencies:**
+✨ Features
 
-```bash
-pip install flask pytesseract pillow mysql-connector-python reportlab requests opencv-python-headless numpy PyMuPDF PyPDF2
-```
+- **Multi-Platform Support:** Validate certificates from Google Education, Great Learning, Udemy, or any other source.
+- **QR Code Scanning:** Automagically reads Google certificate QR codes for verification 📷.
+- **URL Verification:** Instantly confirms Great Learning & Udemy certificates by their URLs 🌐.
+- **Custom Authenticity:** Supports “Others” by hashing and validating certificates in a MySQL database 🗄️.
+- **Clean UI:** User-friendly interface guides you every step of the way.
+- **Built with Flask:** Lightweight, modular, easy to extend 🍰.
 
-2. **Install Tesseract OCR:**
-   - Windows: Download and install from https://github.com/UB-Mannheim/tesseract/wiki
-   - Linux: `sudo apt-get install tesseract-ocr`
-   - Mac: `brew install tesseract`
+🏗️ How It Works
 
-3. **Set up MySQL database:**
+1. **Upload** your certificate and **choose the organization**.
+2. **Google Education:** QR code scanned ➡️ verified via QR data.
+3. **Great Learning/Udemy:** Certificate URL is checked online.
+4. **Other:** Certificate hash key matches with MySQL database.
 
-Create a database and table:
+🛠️ Getting Started
 
-```sql
-CREATE DATABASE certificate_auth;
+Prerequisites
 
-USE certificate_auth;
+- Python 3.x 🐍
+- Flask
+- MySQL server 🗃️
+- Libraries: `qrcode`, `opencv-python`, `mysql-connector-python`, `requests`, etc.
 
-CREATE TABLE certificates (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    serial_number VARCHAR(255) UNIQUE NOT NULL,
-    name VARCHAR(255) NOT NULL,
-    organization VARCHAR(255) NOT NULL,
-    issue_date DATE NOT NULL,
-    expiry_date DATE NOT NULL,
-    completion_date DATE NOT NULL,
-    issuer VARCHAR(255) NOT NULL,
-    hash VARCHAR(64) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-```
+Installation
 
-4. **Update database configuration in `auth.py`:**
+1. Clone this repo:
+   ```bash
+   git clone https://github.com/yourusername/certificate-authenticator-simulator.git
+   cd certificate-authenticator-simulator
+   ```
 
-```python
-db_config = {
-    'user': 'your_username',
-    'password': 'your_password',
-    'host': 'localhost',
-    'database': 'certificate_auth'
-}
-```
+2. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-## Running the Backend
+3. Set up the database:
+   Use the provided SQL schema in the `/db` folder.
 
-1. Navigate to the certificate_backend directory:
-```bash
-cd "e:\projects\Random Projects\DIDfinal\certificate_backend"
-```
+4. Run the app:
+   ```bash
+   python app.py
+   ```
 
-2. Run the Flask server:
-```bash
-python auth.py
-```
+5. **Access it:**  
+   Open your browser at [http://localhost:5000](http://localhost:5000) 🚦
 
-The server will start on `http://127.0.0.1:5000`
+🎯 Usage
 
-## API Endpoints
+- Select the issuing organization & upload your certificate.
+- For Google Education, ensure the QR code is visible.
+- Get real-time feedback: is your certificate genuine? 🕵️♂️
 
-### Generate Certificate
-- **POST** `/generate`
-- Creates a new certificate PDF and stores it in the database
-- Body: form-data with name, organization, issue_date, expiry_date, completion_date, issuer, serial_number
+🤝 Contributing
 
-### Authenticate Certificate
-- **POST** `/authenticate`
-- Verifies a certificate by serial number
-- Body: form-data with serial_number
+Pull requests and ideas are *always* welcome! Open an issue first for major suggestions.
 
-### Upload Certificate (Generic)
-- **POST** `/upload`
-- Extracts data from uploaded certificate and verifies
-- Body: form-data with file
-
-### Upload Udemy Certificate
-- **POST** `/upload_udemy`
-- Verifies Udemy certificates by checking URL validity
-- Body: form-data with file
-
-### Upload Great Learning Certificate
-- **POST** `/upload_great_learning`
-- Verifies Great Learning certificates by checking URL validity
-- Body: form-data with file
-
-### Upload Google Education Certificate
-- **POST** `/upload_google_education`
-- Verifies Google Education certificates by scanning QR codes
-- Body: form-data with file
-
-### Download Certificate
-- **GET** `/download?file={filename}`
-- Downloads a generated certificate
-
-### Delete Certificate
-- **POST** `/delete`
-- Removes a certificate file
-- Body: form-data with file_name
-
-## Integration with Frontend
-
-The React frontend (`CertificatesPage.tsx`) is configured to connect to this backend at `http://127.0.0.1:5000`.
-
-To access the Certificates page:
-1. Start the Flask backend (this server)
-2. Start the React frontend: `cd portal && npm run dev`
-3. Navigate to `http://localhost:5173/certificates` in your browser
-
-## Features
-
-- **Certificate Generation**: Create official certificates with unique serial numbers and cryptographic hashes
-- **Certificate Authentication**: Verify certificates using serial numbers or file uploads
-- **Multi-Platform Support**: Verify certificates from Udemy, Great Learning, and Google Education
-- **OCR Support**: Extract text from certificate images using Tesseract
-- **QR Code Scanning**: Validate Google Education certificates via QR codes
-- **Secure Storage**: Store certificate metadata in MySQL database with SHA-256 hashes
-
-## File Structure
-
-```
-certificate_backend/
-├── auth.py                 # Main Flask application
-├── certificates/           # Generated/uploaded certificates
-├── static/                 # Static CSS files
-├── templates/              # HTML templates (standalone pages)
-├── db_sample.txt          # Database schema reference
-└── README.md              # This file
-```
-
-## CORS Configuration
-
-If you encounter CORS issues, install flask-cors:
-
-```bash
-pip install flask-cors
-```
-
-Add to `auth.py`:
-```python
-from flask_cors import CORS
-CORS(app)
-```
-
-## Troubleshooting
-
-1. **Database Connection Error**: Ensure MySQL is running and credentials are correct
-2. **Tesseract Not Found**: Make sure Tesseract OCR is installed and in your system PATH
-3. **Port Already in Use**: Change the port in auth.py: `app.run(debug=True, port=5001)`
-4. **CORS Errors**: Add CORS support as mentioned above
-
-## Security Notes
-
-- This is a development setup. For production:
-  - Use environment variables for database credentials
-  - Enable HTTPS
-  - Implement rate limiting
-  - Add authentication/authorization
-  - Validate all inputs
-  - Use production WSGI server (gunicorn, uwsgi)
