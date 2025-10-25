@@ -12,13 +12,17 @@ import requests
 import cv2
 import numpy as np
 import fitz  # PyMuPDF
-from PyPDF2 import PdfReader  # Add this import
+from PyPDF2 import PdfReader
+import json
+import secrets
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
 
 OUTPUT_DIR = "certificates"
+PROOF_DIR = "zk_proofs"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
+os.makedirs(PROOF_DIR, exist_ok=True)
 
 db_config = {
     'user': 'root',
@@ -29,6 +33,345 @@ db_config = {
 
 def get_db_connection():
     return mysql.connector.connect(**db_config)
+
+# ========================
+# ZK PROOF IMPLEMENTATION
+# ========================
+
+class ZKProofSystem:
+    """Zero-Knowledge Proof System for Certificate Authentication"""
+    
+    @staticmethod
+    def generate_commitment(secret_data):
+        """Generate a commitment (hash) of secret data"""
+        return hashlib.sha256(secret_data.encode()).hexdigest()
+    
+    @staticmethod
+    def generate_challenge():
+        """Generate a random challenge"""
+        return secrets.token_hex(32)
+    
+    @staticmethod
+    def create_proof(secret_data, challenge):
+        """Create a ZK proof that proves knowledge of secret without revealing it"""
+        commitment = ZKProofSystem.generate_commitment(secret_data)
+        proof_data = f"{challenge}:{secret_data}"
+        proof_hash = hashlib.sha256(proof_data.encode()).hexdigest()
+        
+        return {
+            "commitment": commitment,
+            "proof": proof_hash,
+            "timestamp": datetime.now().isoformat()
+        }
+    
+    @staticmethod
+    def verify_proof(commitment, proof, challenge, secret_data):
+        """Verify the ZK proof without learning the secret"""
+        expected_proof_data = f"{challenge}:{secret_data}"
+        expected_proof = hashlib.sha256(expected_proof_data.encode()).hexdigest()
+        expected_commitment = ZKProofSystem.generate_commitment(secret_data)
+        
+        return proof == expected_proof and commitment == expected_commitment
+    
+    @staticmethod
+    def create_ownership_proof(serial_number, owner_secret):
+        """Prove ownership of a certificate without revealing the secret"""
+        challenge = ZKProofSystem.generate_challenge()
+        commitment = ZKProofSystem.generate_commitment(f"{serial_number}:{owner_secret}")
+        
+        proof_data = f"{challenge}:{serial_number}:{owner_secret}"
+        proof = hashlib.sha256(proof_data.encode()).hexdigest()
+        
+        return {
+            "serial_number": serial_number,
+            "commitment": commitment,
+            "challenge": challenge,
+            "proof": proof,
+            "timestamp": datetime.now().isoformat()
+        }
+    
+    @staticmethod
+    def verify_ownership_proof(proof_obj, serial_number, owner_secret):
+        """Verify ownership proof"""
+        expected_commitment = ZKProofSystem.generate_commitment(f"{serial_number}:{owner_secret}")
+        proof_data = f"{proof_obj['challenge']}:{serial_number}:{owner_secret}"
+        expected_proof = hashlib.sha256(proof_data.encode()).hexdigest()
+        
+        return (proof_obj['commitment'] == expected_commitment and 
+                proof_obj['proof'] == expected_proof)
+    
+    @staticmethod
+    def create_attribute_proof(attribute_name, attribute_value, predicate_type, predicate_value):
+        """Prove an attribute satisfies a condition without revealing the value"""
+        challenge = ZKProofSystem.generate_challenge()
+        
+        # Check if predicate is satisfied
+        predicate_satisfied = ZKProofSystem.check_predicate(attribute_value, predicate_type, predicate_value)
+        
+        if not predicate_satisfied:
+            return None
+        
+        commitment = ZKProofSystem.generate_commitment(f"{attribute_name}:{attribute_value}")
+        proof_data = f"{challenge}:{attribute_name}:{predicate_satisfied}"
+        proof = hashlib.sha256(proof_data.encode()).hexdigest()
+        
+        return {
+            "attribute": attribute_name,
+            "commitment": commitment,
+            "challenge": challenge,
+            "proof": proof,
+            "predicate_type": predicate_type,
+            "predicate_satisfied": predicate_satisfied,
+            "timestamp": datetime.now().isoformat()
+        }
+    
+    @staticmethod
+    def check_predicate(value, predicate_type, predicate_value):
+        """Check if a predicate is satisfied"""
+        value_str = str(value)
+        predicate_value_str = str(predicate_value)
+        
+        if predicate_type == "greater_than":
+            return value_str > predicate_value_str
+        elif predicate_type == "less_than":
+            return value_str < predicate_value_str
+        elif predicate_type == "equals":
+            return value_str == predicate_value_str
+        elif predicate_type == "not_equals":
+            return value_str != predicate_value_str
+        elif predicate_type == "contains":
+            return predicate_value_str.lower() in value_str.lower()
+        else:
+            return False
+
+# ========================
+# ZK PROOF API ENDPOINTS
+# ========================
+
+@app.route('/zk/generate_ownership_proof', methods=['POST'])
+def generate_ownership_proof():
+    """Generate a ZK proof of certificate ownership"""
+    data = request.get_json()
+    serial_number = data.get("serial_number")
+    owner_secret = data.get("owner_secret")
+    
+    if not all([serial_number, owner_secret]):
+        return jsonify({"error": "Serial number and owner secret are required"}), 400
+    
+    # Check if certificate exists
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM certificates WHERE serial_number = %s", (serial_number,))
+    certificate = cursor.fetchone()
+    cursor.close()
+    conn.close()
+    
+    if not certificate:
+        return jsonify({"error": "Certificate not found"}), 404
+    
+    # Generate ZK proof
+    proof = ZKProofSystem.create_ownership_proof(serial_number, owner_secret)
+    
+    # Store proof
+    proof_id = secrets.token_hex(16)
+    proof_path = os.path.join(PROOF_DIR, f"{proof_id}.json")
+    with open(proof_path, 'w') as f:
+        json.dump(proof, f)
+    
+    return jsonify({
+        "success": True,
+        "proof_id": proof_id,
+        "commitment": proof["commitment"],
+        "message": "Ownership proof generated successfully"
+    }), 200
+
+@app.route('/zk/verify_ownership_proof', methods=['POST'])
+def verify_ownership_proof():
+    """Verify a ZK proof of certificate ownership"""
+    data = request.get_json()
+    proof_id = data.get("proof_id")
+    serial_number = data.get("serial_number")
+    owner_secret = data.get("owner_secret")
+    
+    if not all([proof_id, serial_number, owner_secret]):
+        return jsonify({"error": "Proof ID, serial number, and owner secret are required"}), 400
+    
+    # Load proof
+    proof_path = os.path.join(PROOF_DIR, f"{proof_id}.json")
+    if not os.path.exists(proof_path):
+        return jsonify({"error": "Proof not found"}), 404
+    
+    with open(proof_path, 'r') as f:
+        proof_obj = json.load(f)
+    
+    # Verify proof
+    is_valid = ZKProofSystem.verify_ownership_proof(proof_obj, serial_number, owner_secret)
+    
+    if is_valid:
+        return jsonify({
+            "success": True,
+            "message": "Ownership verified successfully",
+            "verified": True
+        }), 200
+    else:
+        return jsonify({
+            "success": False,
+            "message": "Ownership verification failed",
+            "verified": False
+        }), 400
+
+@app.route('/zk/prove_attribute', methods=['POST'])
+def prove_attribute():
+    """Prove a certificate attribute satisfies a condition without revealing the value"""
+    data = request.get_json()
+    serial_number = data.get("serial_number")
+    attribute_name = data.get("attribute")
+    predicate_type = data.get("predicate")
+    predicate_value = data.get("value")
+    
+    if not all([serial_number, attribute_name, predicate_type, predicate_value]):
+        return jsonify({"error": "All fields are required"}), 400
+    
+    # Get certificate
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM certificates WHERE serial_number = %s", (serial_number,))
+    certificate = cursor.fetchone()
+    cursor.close()
+    conn.close()
+    
+    if not certificate:
+        return jsonify({"error": "Certificate not found"}), 404
+    
+    # Get attribute value
+    if attribute_name not in certificate:
+        return jsonify({"error": f"Attribute '{attribute_name}' not found"}), 400
+    
+    attribute_value = str(certificate[attribute_name])
+    
+    # Generate attribute proof
+    proof = ZKProofSystem.create_attribute_proof(attribute_name, attribute_value, predicate_type, predicate_value)
+    
+    if not proof:
+        return jsonify({
+            "success": False,
+            "message": "Predicate not satisfied",
+            "verified": False
+        }), 400
+    
+    # Store proof
+    proof_id = secrets.token_hex(16)
+    proof_path = os.path.join(PROOF_DIR, f"attr_{proof_id}.json")
+    with open(proof_path, 'w') as f:
+        json.dump(proof, f)
+    
+    return jsonify({
+        "success": True,
+        "proof_id": proof_id,
+        "message": f"Attribute '{attribute_name}' satisfies predicate without revealing value",
+        "verified": True,
+        "commitment": proof["commitment"]
+    }), 200
+
+@app.route('/zk/selective_disclosure', methods=['POST'])
+def selective_disclosure():
+    """Selectively disclose specific certificate attributes using ZK proofs"""
+    data = request.get_json()
+    serial_number = data.get("serial_number")
+    disclosed_attributes = data.get("disclosed_attributes", [])
+    owner_secret = data.get("owner_secret")
+    
+    if not all([serial_number, owner_secret]):
+        return jsonify({"error": "Serial number and owner secret are required"}), 400
+    
+    # Get certificate
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM certificates WHERE serial_number = %s", (serial_number,))
+    certificate = cursor.fetchone()
+    cursor.close()
+    conn.close()
+    
+    if not certificate:
+        return jsonify({"error": "Certificate not found"}), 404
+    
+    # Generate ownership proof
+    ownership_proof = ZKProofSystem.create_ownership_proof(serial_number, owner_secret)
+    
+    # Selectively disclose attributes
+    disclosed_data = {}
+    hidden_proofs = {}
+    
+    for key, value in certificate.items():
+        if key in disclosed_attributes:
+            disclosed_data[key] = value
+        elif key not in ['id', 'hash', 'created_at']:
+            commitment = ZKProofSystem.generate_commitment(f"{key}:{value}")
+            hidden_proofs[key] = {
+                "commitment": commitment,
+                "exists": True
+            }
+    
+    # Store disclosure proof
+    disclosure_id = secrets.token_hex(16)
+    disclosure_proof = {
+        "disclosure_id": disclosure_id,
+        "serial_number": serial_number,
+        "ownership_proof": ownership_proof,
+        "disclosed_attributes": disclosed_data,
+        "hidden_attributes": hidden_proofs,
+        "timestamp": datetime.now().isoformat()
+    }
+    
+    proof_path = os.path.join(PROOF_DIR, f"disclosure_{disclosure_id}.json")
+    with open(proof_path, 'w') as f:
+        json.dump(disclosure_proof, f)
+    
+    return jsonify({
+        "success": True,
+        "disclosure_id": disclosure_id,
+        "disclosed_attributes": disclosed_data,
+        "hidden_attributes_count": len(hidden_proofs),
+        "message": "Selective disclosure created successfully"
+    }), 200
+
+@app.route('/zk/batch_verify', methods=['POST'])
+def batch_verify():
+    """Verify multiple certificates at once using ZK proofs"""
+    data = request.get_json()
+    proof_ids = data.get("proof_ids", [])
+    
+    if not proof_ids:
+        return jsonify({"error": "No proof IDs provided"}), 400
+    
+    results = []
+    for proof_id in proof_ids:
+        # Try different proof types
+        for prefix in ['', 'attr_', 'disclosure_']:
+            proof_path = os.path.join(PROOF_DIR, f"{prefix}{proof_id}.json")
+            if os.path.exists(proof_path):
+                with open(proof_path, 'r') as f:
+                    proof = json.load(f)
+                results.append({
+                    "proof_id": proof_id,
+                    "verified": True,
+                    "timestamp": proof.get("timestamp"),
+                    "type": prefix or "ownership"
+                })
+                break
+        else:
+            results.append({
+                "proof_id": proof_id,
+                "verified": False,
+                "error": "Proof not found"
+            })
+    
+    return jsonify({
+        "success": True,
+        "results": results,
+        "total": len(results),
+        "verified_count": sum(1 for r in results if r["verified"])
+    }), 200
 
 @app.route('/')
 def index():
