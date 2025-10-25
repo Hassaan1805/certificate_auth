@@ -1,4 +1,5 @@
 from flask import Flask, request, render_template, jsonify, send_file
+from flask_cors import CORS
 import hashlib
 import os
 from datetime import datetime
@@ -14,6 +15,7 @@ import fitz  # PyMuPDF
 from PyPDF2 import PdfReader  # Add this import
 
 app = Flask(__name__)
+CORS(app)  # Enable CORS for all routes
 
 OUTPUT_DIR = "certificates"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
